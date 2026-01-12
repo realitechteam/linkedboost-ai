@@ -1,0 +1,277 @@
+/* LinkedBoost AI - Content Script Styles */
+
+/* Container for injected UI */
+.linkedboost-container {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #f8fafc;
+}
+
+/* AI Reply Button */
+.linkedboost-reply-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+}
+
+.linkedboost-reply-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+}
+
+.linkedboost-reply-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Suggestions Popup */
+.linkedboost-suggestions {
+    position: absolute;
+    z-index: 10000;
+    width: 360px;
+    max-height: 400px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    animation: linkedboost-slide-up 0.2s ease;
+}
+
+@keyframes linkedboost-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.linkedboost-suggestions-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #0f172a;
+    border-bottom: 1px solid #334155;
+}
+
+.linkedboost-suggestions-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #f8fafc;
+}
+
+.linkedboost-suggestions-close {
+    padding: 4px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.linkedboost-suggestions-close:hover {
+    background: #334155;
+    color: #f8fafc;
+}
+
+.linkedboost-suggestions-list {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.linkedboost-suggestion-item {
+    padding: 14px 16px;
+    border-bottom: 1px solid #334155;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.linkedboost-suggestion-item:hover {
+    background: #334155;
+}
+
+.linkedboost-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.linkedboost-suggestion-tone {
+    display: inline-block;
+    padding: 2px 8px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 4px;
+}
+
+.linkedboost-suggestion-tone.professional {
+    background: #0ea5e9;
+    color: white;
+}
+
+.linkedboost-suggestion-tone.friendly {
+    background: #8b5cf6;
+    color: white;
+}
+
+.linkedboost-suggestion-tone.concise {
+    background: #22c55e;
+    color: white;
+}
+
+.linkedboost-suggestion-text {
+    font-size: 14px;
+    color: #e2e8f0;
+    white-space: pre-wrap;
+}
+
+/* Loading State */
+.linkedboost-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    gap: 12px;
+}
+
+.linkedboost-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #334155;
+    border-top-color: #0ea5e9;
+    border-radius: 50%;
+    animation: linkedboost-spin 0.8s linear infinite;
+}
+
+@keyframes linkedboost-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.linkedboost-loading-text {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+/* Profile Analysis Badge */
+.linkedboost-profile-badge {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.linkedboost-profile-badge:hover {
+    transform: translateY(-2px);
+    border-color: #0ea5e9;
+    box-shadow: 0 12px 48px rgba(14, 165, 233, 0.2);
+}
+
+.linkedboost-score-circle {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    border-radius: 50%;
+    color: white;
+}
+
+.linkedboost-score-circle.high {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.linkedboost-score-circle.medium {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.linkedboost-score-circle.low {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.linkedboost-badge-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.linkedboost-badge-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f8fafc;
+}
+
+.linkedboost-badge-subtitle {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* Toast */
+.linkedboost-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10001;
+    padding: 12px 24px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    font-size: 14px;
+    color: #f8fafc;
+    animation: linkedboost-toast-in 0.3s ease;
+}
+
+@keyframes linkedboost-toast-in {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.linkedboost-toast.success {
+    border-color: #22c55e;
+}
+
+.linkedboost-toast.error {
+    border-color: #ef4444;
+}

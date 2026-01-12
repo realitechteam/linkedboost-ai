@@ -1,0 +1,200 @@
+// Prisma Schema for LinkedBoost AI
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - linked to OAuth providers
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  linkedinId    String?   @unique
+  role          UserRole  @default(USER)
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  subscription  Subscription?
+  profiles      LinkedInProfile[]
+  posts         PostDraft[]
+  jobMatches    JobMatch[]
+  usageRecords  UsageRecord[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
+// NextAuth Account model for OAuth
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+// NextAuth Session model
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// NextAuth Verification Token
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Subscription model for billing
+model Subscription {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  plan      Plan     @default(FREE)
+  status    SubscriptionStatus @default(ACTIVE)
+  stripeCustomerId     String?  @unique
+  stripeSubscriptionId String?  @unique
+  stripePriceId        String?
+
+  currentPeriodStart DateTime @default(now())
+  currentPeriodEnd   DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Plan {
+  FREE
+  PRO
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  TRIALING
+}
+
+// LinkedIn Profile data
+model LinkedInProfile {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  profileUrl String
+  headline   String?
+  about      String?  @db.Text
+  experience Json?    // Array of experience objects
+  education  Json?    // Array of education objects
+  skills     String[]
+
+  // Analysis results
+  lastScore    Int?
+  lastAnalysis Json?
+  lastSyncedAt DateTime? // When profile was last synced from extension
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// Post drafts created by AI
+model PostDraft {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  topic    String
+  content  String   @db.Text
+  tone     String
+  format   String
+  hashtags String[]
+  status   PostStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// Job match analysis
+model JobMatch {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  jobUrl     String
+  jobTitle   String
+  company    String
+  matchScore Int
+  analysis   Json     // Detailed match breakdown
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Usage tracking for feature limits
+model UsageRecord {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  feature    Feature
+  tokensUsed Int      @default(0)
+  cost       Float    @default(0)
+
+  // Daily/Monthly tracking
+  date       DateTime @default(now()) @db.Date
+
+  @@unique([userId, feature, date])
+  @@index([userId, date])
+}
+
+enum Feature {
+  REPLY_SUGGEST
+  POST_GENERATE
+  PROFILE_ANALYZE
+  JOB_MATCH
+}
