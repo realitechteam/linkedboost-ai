@@ -15,6 +15,7 @@ import {
     Link as LinkIcon,
     ArrowRight,
     Info,
+    Trash2,
 } from "lucide-react";
 
 interface ProfileSection {
@@ -46,10 +47,21 @@ interface SyncedProfile {
     profileUrl: string;
     headline: string | null;
     about: string | null;
-    experience: { title?: string; company?: string }[] | null;
-    skills: string[];
-    education: { school?: string; degree?: string }[] | null;
+    experience: string | null;  // JSON string
+    skills: string | null;      // JSON string
+    education: string | null;   // JSON string
     lastSyncedAt: string | null;
+}
+
+// Helper to parse JSON fields from SQLite (stored as strings)
+function parseJsonField<T extends unknown[]>(value: string | null | undefined, defaultValue: T): T {
+    if (!value) return defaultValue;
+    try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? (parsed as T) : defaultValue;
+    } catch {
+        return defaultValue;
+    }
 }
 
 interface FetchedProfile {
@@ -71,6 +83,12 @@ export default function ProfileOptimizerPage() {
     const [fetchedProfile, setFetchedProfile] = useState<FetchedProfile | null>(null);
     const [analysis, setAnalysis] = useState<ProfileAnalysis | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    // Parsed profile data
+    const parsedExperience = parseJsonField<{ title?: string; company?: string }[]>(syncedProfile?.experience, []);
+    const parsedSkills = parseJsonField<string[]>(syncedProfile?.skills, []);
+    const parsedEducation = parseJsonField<{ school?: string; degree?: string }[]>(syncedProfile?.education, []);
 
     // Fetch synced profile on load
     useEffect(() => {
@@ -92,6 +110,31 @@ export default function ProfileOptimizerPage() {
             console.error("Failed to fetch synced profile", err);
         } finally {
             setIsFetchingSynced(false);
+        }
+    };
+
+    const handleDeleteProfile = async () => {
+        if (!confirm("Bạn có chắc muốn xóa profile đã đồng bộ? Bạn sẽ cần đồng bộ lại từ LinkedIn.")) {
+            return;
+        }
+
+        setIsDeleting(true);
+        try {
+            const response = await fetch("/api/profile/delete", { method: "DELETE" });
+            const data = await response.json();
+            if (data.success) {
+                setSyncedProfile(null);
+                setProfileUrl("");
+                setAnalysis(null);
+                setError(null);
+            } else {
+                setError("Không thể xóa profile");
+            }
+        } catch (err) {
+            console.error("Failed to delete profile", err);
+            setError("Có lỗi khi xóa profile");
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -132,8 +175,8 @@ export default function ProfileOptimizerPage() {
         const profileData = syncedProfile ? {
             headline: syncedProfile.headline || "",
             about: syncedProfile.about || "",
-            experience: syncedProfile.experience || [],
-            skills: syncedProfile.skills || [],
+            experience: parsedExperience,
+            skills: parsedSkills,
             hasPhoto: true,
         } : fetchedProfile ? {
             headline: fetchedProfile.headline || "",
@@ -286,13 +329,27 @@ export default function ProfileOptimizerPage() {
                             <CheckCircle className="w-5 h-5" />
                             <span className="font-medium">Profile Đã Đồng Bộ Từ Extension</span>
                         </div>
-                        <button
-                            onClick={fetchSyncedProfile}
-                            className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-                        >
-                            <RefreshCw className="w-4 h-4" />
-                            Làm mới
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={fetchSyncedProfile}
+                                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                                Làm mới
+                            </button>
+                            <button
+                                onClick={handleDeleteProfile}
+                                disabled={isDeleting}
+                                className="text-sm text-red-500 hover:text-red-700 flex items-center gap-1"
+                            >
+                                {isDeleting ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Trash2 className="w-4 h-4" />
+                                )}
+                                Xóa
+                            </button>
+                        </div>
                     </div>
 
                     <div className="space-y-4">
@@ -320,7 +377,7 @@ export default function ProfileOptimizerPage() {
                                     Kinh nghiệm
                                 </label>
                                 <div className="mt-1 space-y-1">
-                                    {syncedProfile.experience?.slice(0, 3).map((exp, i) => (
+                                    {parsedExperience.slice(0, 3).map((exp, i) => (
                                         <div key={i} className="text-sm">
                                             <span className="text-gray-700">{exp.title}</span>
                                             {exp.company && (
@@ -328,7 +385,7 @@ export default function ProfileOptimizerPage() {
                                             )}
                                         </div>
                                     ))}
-                                    {(!syncedProfile.experience || syncedProfile.experience.length === 0) && (
+                                    {parsedExperience.length === 0 && (
                                         <span className="text-gray-400 text-sm">Chưa có dữ liệu</span>
                                     )}
                                 </div>
@@ -336,16 +393,16 @@ export default function ProfileOptimizerPage() {
                             <div>
                                 <label className="text-xs text-gray-500 uppercase tracking-wide flex items-center gap-1">
                                     <Award className="w-3 h-3" />
-                                    Kỹ năng ({syncedProfile.skills?.length || 0})
+                                    Kỹ năng ({parsedSkills.length})
                                 </label>
                                 <div className="mt-1 flex flex-wrap gap-1">
-                                    {syncedProfile.skills?.slice(0, 5).map((skill, i) => (
+                                    {parsedSkills.slice(0, 5).map((skill, i) => (
                                         <span key={i} className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">
                                             {skill}
                                         </span>
                                     ))}
-                                    {syncedProfile.skills?.length > 5 && (
-                                        <span className="text-gray-400 text-xs">+{syncedProfile.skills.length - 5} khác</span>
+                                    {parsedSkills.length > 5 && (
+                                        <span className="text-gray-400 text-xs">+{parsedSkills.length - 5} khác</span>
                                     )}
                                 </div>
                             </div>

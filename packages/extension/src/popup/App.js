@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { useState, useEffect } from 'react';
-import { Sparkles, MessageSquare, PenTool, User, Briefcase, Settings, ExternalLink, Zap, Crown, CheckCircle, RefreshCw, AlertCircle, LogOut, } from 'lucide-react';
-const API_BASE = 'http://localhost:3001';
+import { Sparkles, MessageSquare, PenTool, User, Briefcase, Settings, ExternalLink, Zap, Crown, CheckCircle, RefreshCw, AlertCircle, LogOut, Link2, Link2Off, } from 'lucide-react';
+import { API_BASE } from '../lib/constants';
 const features = [
     {
         id: 'reply',
@@ -36,12 +36,28 @@ export default function App() {
     const [user, setUser] = useState({
         isLoggedIn: false,
     });
+    const [linkedInSession, setLinkedInSession] = useState({
+        isLoggedIn: false,
+    });
     const [isLoading, setIsLoading] = useState(true);
     const [isSyncing, setIsSyncing] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     useEffect(() => {
         checkSession();
+        checkLinkedInSessionStatus();
     }, []);
+    // Check LinkedIn session status from storage
+    const checkLinkedInSessionStatus = async () => {
+        try {
+            const result = await chrome.storage.local.get(['linkedInSession']);
+            if (result.linkedInSession) {
+                setLinkedInSession(result.linkedInSession);
+            }
+        }
+        catch (error) {
+            console.error('Failed to check LinkedIn session:', error);
+        }
+    };
     // Fetch session from web app API
     const checkSession = async () => {
         setIsLoading(true);
@@ -72,7 +88,7 @@ export default function App() {
                     // Save to local storage for offline access
                     chrome.storage.local.set({
                         user: data.user,
-                        token: 'session-active',
+                        isAuthenticated: true,
                     });
                 }
                 else {
@@ -93,8 +109,8 @@ export default function App() {
         }
     };
     const loadFromLocalStorage = () => {
-        chrome.storage.local.get(['user', 'token', 'profileSynced', 'lastSyncTime', 'profileData'], (result) => {
-            if (result.user && result.token) {
+        chrome.storage.local.get(['user', 'isAuthenticated', 'profileSynced', 'lastSyncTime', 'profileData'], (result) => {
+            if (result.user && result.isAuthenticated) {
                 setUser({
                     isLoggedIn: true,
                     name: result.user.name,
@@ -126,7 +142,7 @@ export default function App() {
         chrome.tabs.create({ url: `${API_BASE}/login?extension=true` });
     };
     const handleLogout = () => {
-        chrome.storage.local.remove(['user', 'token', 'profileSynced', 'lastSyncTime', 'profileData'], () => {
+        chrome.storage.local.remove(['user', 'isAuthenticated', 'profileSynced', 'lastSyncTime', 'profileData'], () => {
             setUser({ isLoggedIn: false });
         });
     };
@@ -209,7 +225,9 @@ export default function App() {
                                         ? 'bg-purple-500/20 text-purple-400'
                                         : user.plan === 'PRO'
                                             ? 'bg-primary-500/20 text-primary-400'
-                                            : 'bg-gray-500/20 text-gray-400'}`, children: user.plan === 'FREE' ? 'Miễn Phí' : user.plan })] }), _jsx("div", { className: `p-3 rounded-xl border ${user.profile?.synced
+                                            : 'bg-gray-500/20 text-gray-400'}`, children: user.plan === 'FREE' ? 'Miễn Phí' : user.plan })] }), _jsx("div", { className: `p-3 rounded-xl border ${linkedInSession.isLoggedIn
+                                ? 'bg-blue-500/10 border-blue-500/30'
+                                : 'bg-gray-500/10 border-gray-500/30'}`, children: _jsxs("div", { className: "flex items-center justify-between", children: [_jsx("div", { className: "flex items-center gap-2", children: linkedInSession.isLoggedIn ? (_jsxs(_Fragment, { children: [_jsx(Link2, { className: "w-5 h-5 text-blue-400" }), _jsxs("div", { children: [_jsx("p", { className: "text-sm font-medium text-blue-400", children: "\u0110\u00E3 K\u1EBFt N\u1ED1i LinkedIn" }), _jsx("p", { className: "text-xs text-gray-400", children: linkedInSession.userName || 'Tài khoản đã đăng nhập' })] })] })) : (_jsxs(_Fragment, { children: [_jsx(Link2Off, { className: "w-5 h-5 text-gray-400" }), _jsxs("div", { children: [_jsx("p", { className: "text-sm font-medium text-gray-400", children: "Ch\u01B0a K\u1EBFt N\u1ED1i LinkedIn" }), _jsx("p", { className: "text-xs text-gray-500", children: "M\u1EDF LinkedIn \u0111\u1EC3 k\u1EBFt n\u1ED1i" })] })] })) }), !linkedInSession.isLoggedIn && (_jsx("button", { onClick: () => chrome.tabs.create({ url: 'https://www.linkedin.com/login' }), className: "px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors", children: "\u0110\u0103ng Nh\u1EADp" }))] }) }), _jsx("div", { className: `p-3 rounded-xl border ${user.profile?.synced
                                 ? 'bg-green-500/10 border-green-500/30'
                                 : 'bg-amber-500/10 border-amber-500/30'}`, children: _jsxs("div", { className: "flex items-center justify-between", children: [_jsx("div", { className: "flex items-center gap-2", children: user.profile?.synced ? (_jsxs(_Fragment, { children: [_jsx(CheckCircle, { className: "w-5 h-5 text-green-400" }), _jsxs("div", { children: [_jsx("p", { className: "text-sm font-medium text-green-400", children: "Profile \u0110\u00E3 \u0110\u1ED3ng B\u1ED9" }), _jsx("p", { className: "text-xs text-gray-400", children: formatTime(user.profile.lastSyncTime) })] })] })) : (_jsxs(_Fragment, { children: [_jsx(AlertCircle, { className: "w-5 h-5 text-amber-400" }), _jsxs("div", { children: [_jsx("p", { className: "text-sm font-medium text-amber-400", children: "Ch\u01B0a \u0110\u1ED3ng B\u1ED9 Profile" }), _jsx("p", { className: "text-xs text-gray-400", children: "M\u1EDF trang profile LinkedIn" })] })] })) }), _jsx("button", { onClick: handleSyncProfile, disabled: isSyncing, className: "p-2 hover:bg-white/10 rounded-lg transition-colors", title: "\u0110\u1ED3ng b\u1ED9 profile", children: _jsx(RefreshCw, { className: `w-4 h-4 text-gray-400 ${isSyncing ? 'animate-spin' : ''}` }) })] }) }), _jsx("div", { className: "grid grid-cols-2 gap-3", children: features.map((feature) => (_jsxs("button", { onClick: () => handleFeatureClick(feature.id), className: "p-4 bg-dark-card hover:bg-dark-border rounded-xl transition-all text-left group", children: [_jsx("div", { className: `w-10 h-10 rounded-lg bg-gradient-to-br ${feature.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`, children: _jsx(feature.icon, { className: "w-5 h-5 text-white" }) }), _jsx("h3", { className: "font-semibold text-sm mb-1 text-white", children: feature.title }), _jsx("p", { className: "text-xs text-gray-400", children: feature.description })] }, feature.id))) }), user.usage && (_jsxs("div", { className: "p-4 bg-dark-card rounded-xl space-y-3", children: [_jsx("h4", { className: "text-sm font-medium text-gray-300", children: "S\u1EED D\u1EE5ng H\u00F4m Nay" }), _jsxs("div", { className: "space-y-2", children: [_jsxs("div", { className: "flex items-center justify-between text-xs", children: [_jsx("span", { className: "text-gray-400", children: "AI Replies" }), _jsxs("div", { className: "flex items-center gap-2", children: [_jsx("div", { className: "w-20 h-1.5 bg-dark-border rounded-full overflow-hidden", children: _jsx("div", { className: "h-full bg-blue-500", style: { width: `${Math.min((user.usage.replies.used / user.usage.replies.limit) * 100, 100)}%` } }) }), _jsxs("span", { className: "font-medium text-white w-10 text-right", children: [user.usage.replies.used, "/", user.usage.replies.limit] })] })] }), _jsxs("div", { className: "flex items-center justify-between text-xs", children: [_jsx("span", { className: "text-gray-400", children: "B\u00E0i Vi\u1EBFt" }), _jsxs("div", { className: "flex items-center gap-2", children: [_jsx("div", { className: "w-20 h-1.5 bg-dark-border rounded-full overflow-hidden", children: _jsx("div", { className: "h-full bg-purple-500", style: { width: `${Math.min((user.usage.posts.used / user.usage.posts.limit) * 100, 100)}%` } }) }), _jsxs("span", { className: "font-medium text-white w-10 text-right", children: [user.usage.posts.used, "/", user.usage.posts.limit] })] })] }), _jsxs("div", { className: "flex items-center justify-between text-xs", children: [_jsx("span", { className: "text-gray-400", children: "Job Matches" }), _jsxs("div", { className: "flex items-center gap-2", children: [_jsx("div", { className: "w-20 h-1.5 bg-dark-border rounded-full overflow-hidden", children: _jsx("div", { className: "h-full bg-green-500", style: { width: `${Math.min((user.usage.jobMatches.used / user.usage.jobMatches.limit) * 100, 100)}%` } }) }), _jsxs("span", { className: "font-medium text-white w-10 text-right", children: [user.usage.jobMatches.used, "/", user.usage.jobMatches.limit] })] })] })] })] })), user.plan === 'FREE' && (_jsxs("div", { className: "p-4 bg-gradient-to-r from-primary-500/20 to-purple-500/20 rounded-xl border border-primary-500/30", children: [_jsxs("div", { className: "flex items-center gap-2 mb-2", children: [_jsx(Crown, { className: "w-5 h-5 text-primary-400" }), _jsx("span", { className: "font-semibold text-sm text-white", children: "N\u00E2ng C\u1EA5p Pro" })] }), _jsx("p", { className: "text-xs text-gray-400 mb-3", children: "Kh\u00F4ng gi\u1EDBi h\u1EA1n AI features v\u00E0 h\u1ED7 tr\u1EE3 \u01B0u ti\u00EAn" }), _jsx("button", { onClick: () => chrome.tabs.create({ url: `${API_BASE}/settings?tab=billing` }), className: "w-full py-2 bg-primary-600 hover:bg-primary-500 text-white text-sm font-medium rounded-lg transition-colors", children: "Xem C\u00E1c G\u00F3i" })] }))] })) }), _jsx("footer", { className: "p-4 border-t border-dark-border", children: _jsxs("button", { onClick: openDashboard, className: "w-full py-2.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2", children: ["M\u1EDF Dashboard", _jsx(ExternalLink, { className: "w-4 h-4" })] }) })] }));
 }

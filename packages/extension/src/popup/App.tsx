@@ -13,15 +13,25 @@ import {
     RefreshCw,
     AlertCircle,
     LogOut,
+    Link2,
+    Link2Off,
 } from 'lucide-react';
-
-const API_BASE = 'http://localhost:3001';
+import { API_BASE } from '../lib/constants';
 
 interface ProfileData {
     synced: boolean;
     name?: string;
     headline?: string;
+    location?: string;
+    connections?: string;
     lastSyncTime?: number;
+}
+
+interface LinkedInSession {
+    isLoggedIn: boolean;
+    userName?: string;
+    profileUrl?: string;
+    checkedAt?: number;
 }
 
 interface UserState {
@@ -74,13 +84,29 @@ export default function App() {
     const [user, setUser] = useState<UserState>({
         isLoggedIn: false,
     });
+    const [linkedInSession, setLinkedInSession] = useState<LinkedInSession>({
+        isLoggedIn: false,
+    });
     const [isLoading, setIsLoading] = useState(true);
     const [isSyncing, setIsSyncing] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         checkSession();
+        checkLinkedInSessionStatus();
     }, []);
+
+    // Check LinkedIn session status from storage
+    const checkLinkedInSessionStatus = async () => {
+        try {
+            const result = await chrome.storage.local.get(['linkedInSession']);
+            if (result.linkedInSession) {
+                setLinkedInSession(result.linkedInSession);
+            }
+        } catch (error) {
+            console.error('Failed to check LinkedIn session:', error);
+        }
+    };
 
     // Fetch session from web app API
     const checkSession = async () => {
@@ -116,7 +142,7 @@ export default function App() {
                     // Save to local storage for offline access
                     chrome.storage.local.set({
                         user: data.user,
-                        token: 'session-active',
+                        isAuthenticated: true,
                     });
                 } else {
                     // Check local storage fallback
@@ -134,8 +160,8 @@ export default function App() {
     };
 
     const loadFromLocalStorage = () => {
-        chrome.storage.local.get(['user', 'token', 'profileSynced', 'lastSyncTime', 'profileData'], (result) => {
-            if (result.user && result.token) {
+        chrome.storage.local.get(['user', 'isAuthenticated', 'profileSynced', 'lastSyncTime', 'profileData'], (result) => {
+            if (result.user && result.isAuthenticated) {
                 setUser({
                     isLoggedIn: true,
                     name: result.user.name,
@@ -170,7 +196,7 @@ export default function App() {
     };
 
     const handleLogout = () => {
-        chrome.storage.local.remove(['user', 'token', 'profileSynced', 'lastSyncTime', 'profileData'], () => {
+        chrome.storage.local.remove(['user', 'isAuthenticated', 'profileSynced', 'lastSyncTime', 'profileData'], () => {
             setUser({ isLoggedIn: false });
         });
     };
@@ -366,6 +392,44 @@ export default function App() {
                                 }`}>
                                 {user.plan === 'FREE' ? 'Miễn Phí' : user.plan}
                             </span>
+                        </div>
+
+                        {/* LinkedIn Connection Status */}
+                        <div className={`p-3 rounded-xl border ${linkedInSession.isLoggedIn
+                            ? 'bg-blue-500/10 border-blue-500/30'
+                            : 'bg-gray-500/10 border-gray-500/30'
+                            }`}>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    {linkedInSession.isLoggedIn ? (
+                                        <>
+                                            <Link2 className="w-5 h-5 text-blue-400" />
+                                            <div>
+                                                <p className="text-sm font-medium text-blue-400">Đã Kết Nối LinkedIn</p>
+                                                <p className="text-xs text-gray-400">
+                                                    {linkedInSession.userName || 'Tài khoản đã đăng nhập'}
+                                                </p>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Link2Off className="w-5 h-5 text-gray-400" />
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-400">Chưa Kết Nối LinkedIn</p>
+                                                <p className="text-xs text-gray-500">Mở LinkedIn để kết nối</p>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                                {!linkedInSession.isLoggedIn && (
+                                    <button
+                                        onClick={() => chrome.tabs.create({ url: 'https://www.linkedin.com/login' })}
+                                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors"
+                                    >
+                                        Đăng Nhập
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Profile Sync Status */}

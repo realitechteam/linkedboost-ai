@@ -1,6 +1,5 @@
 // Background Service Worker for LinkedBoost AI Extension
-// API base URL
-const API_BASE = 'http://localhost:3001/api';
+import { API_URL } from '../lib/constants';
 // Listen for messages from content scripts and popup
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     handleMessage(message).then(sendResponse);
@@ -27,9 +26,9 @@ async function handleMessage(message) {
 // Get authentication state from storage
 async function getAuthState() {
     return new Promise((resolve) => {
-        chrome.storage.local.get(['user', 'token'], (result) => {
+        chrome.storage.local.get(['user', 'isAuthenticated'], (result) => {
             resolve({
-                isLoggedIn: !!result.token,
+                isLoggedIn: !!result.isAuthenticated,
                 user: result.user || null,
             });
         });
@@ -37,17 +36,17 @@ async function getAuthState() {
 }
 // Call AI API for reply suggestions
 async function suggestReply(data) {
-    const { token } = await chrome.storage.local.get('token');
-    if (!token) {
+    const { isAuthenticated } = await chrome.storage.local.get('isAuthenticated');
+    if (!isAuthenticated) {
         return { error: 'Not authenticated' };
     }
     try {
-        const response = await fetch(`${API_BASE}/ai/reply-suggest`, {
+        const response = await fetch(`${API_URL}/ai/reply-suggest`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
             },
+            credentials: 'include',
             body: JSON.stringify(data),
         });
         if (!response.ok) {
@@ -62,17 +61,17 @@ async function suggestReply(data) {
 }
 // Call AI API for profile analysis
 async function analyzeProfile(data) {
-    const { token } = await chrome.storage.local.get('token');
-    if (!token) {
+    const { isAuthenticated } = await chrome.storage.local.get('isAuthenticated');
+    if (!isAuthenticated) {
         return { error: 'Not authenticated' };
     }
     try {
-        const response = await fetch(`${API_BASE}/ai/profile-analyze`, {
+        const response = await fetch(`${API_URL}/ai/profile-analyze`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
             },
+            credentials: 'include',
             body: JSON.stringify(data),
         });
         if (!response.ok) {
@@ -87,17 +86,17 @@ async function analyzeProfile(data) {
 }
 // Call AI API for job match analysis
 async function analyzeJobMatch(data) {
-    const { token } = await chrome.storage.local.get('token');
-    if (!token) {
+    const { isAuthenticated } = await chrome.storage.local.get('isAuthenticated');
+    if (!isAuthenticated) {
         return { error: 'Not authenticated' };
     }
     try {
-        const response = await fetch(`${API_BASE}/ai/job-match`, {
+        const response = await fetch(`${API_URL}/ai/job-match`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
             },
+            credentials: 'include',
             body: JSON.stringify(data),
         });
         if (!response.ok) {
@@ -112,17 +111,17 @@ async function analyzeJobMatch(data) {
 }
 // Sync profile data to web app database
 async function syncProfile(data) {
-    const { token } = await chrome.storage.local.get('token');
-    if (!token) {
+    const { isAuthenticated } = await chrome.storage.local.get('isAuthenticated');
+    if (!isAuthenticated) {
         return { error: 'Not authenticated' };
     }
     try {
-        const response = await fetch(`${API_BASE}/profile/sync`, {
+        const response = await fetch(`${API_URL}/profile/sync`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
             },
+            credentials: 'include',
             body: JSON.stringify(data),
         });
         if (!response.ok) {
@@ -156,7 +155,7 @@ async function checkProfileSynced() {
 chrome.runtime.onMessageExternal.addListener((message, _sender, sendResponse) => {
     if (message.type === 'AUTH_SUCCESS') {
         chrome.storage.local.set({
-            token: message.token,
+            isAuthenticated: true,
             user: message.user,
             profileSynced: false, // Reset sync status on new login
         });
@@ -176,5 +175,4 @@ chrome.runtime.onMessageExternal.addListener((message, _sender, sendResponse) =>
 chrome.runtime.onInstalled.addListener(() => {
     console.log('LinkedBoost AI extension installed');
 });
-export {};
 //# sourceMappingURL=index.js.map

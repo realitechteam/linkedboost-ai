@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Loader2, TrendingUp, ExternalLink } from 'lucide-react';
+import { API_BASE } from '../../lib/constants';
 
 interface ProfileBadgeProps {
     profileData: Record<string, unknown>;
@@ -20,13 +21,15 @@ export function ProfileBadge({ profileData }: ProfileBadgeProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isMock, setIsMock] = useState(false);
 
     useEffect(() => {
         analyzeProfile();
-    }, [profileData]);
+    }, [profileData.name, profileData.headline]);
 
     const analyzeProfile = async () => {
         setIsLoading(true);
+        setIsMock(false);
 
         try {
             const response = await chrome.runtime.sendMessage({
@@ -38,10 +41,16 @@ export function ProfileBadge({ profileData }: ProfileBadgeProps) {
                 throw new Error(response.error);
             }
 
-            setAnalysis(response.data || generateMockAnalysis());
+            if (response.data) {
+                setAnalysis(response.data);
+            } else {
+                setIsMock(true);
+                setAnalysis(generateMockAnalysis());
+            }
         } catch (error) {
             console.error('Profile analysis failed:', error);
             // Use mock data for demo
+            setIsMock(true);
             setAnalysis(generateMockAnalysis());
         } finally {
             setIsLoading(false);
@@ -86,7 +95,7 @@ export function ProfileBadge({ profileData }: ProfileBadgeProps) {
 
     const openDashboard = () => {
         chrome.tabs.create({
-            url: `http://localhost:3001/profile?url=${encodeURIComponent(window.location.href)}`
+            url: `${API_BASE}/profile?url=${encodeURIComponent(window.location.href)}`
         });
     };
 
@@ -126,6 +135,11 @@ export function ProfileBadge({ profileData }: ProfileBadgeProps) {
                         <TrendingUp size={12} style={{ display: 'inline', marginRight: '4px' }} />
                         Click for details
                     </span>
+                    {isMock && (
+                        <span style={{ fontSize: '10px', color: '#f59e0b', display: 'block', marginTop: '2px' }}>
+                            (Ước tính - kết nối server để xem kết quả chính xác)
+                        </span>
+                    )}
                 </div>
             </div>
 

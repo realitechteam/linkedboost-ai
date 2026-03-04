@@ -1,0 +1,198 @@
+/* LinkedBoost AI Floating Controls Styles */
+
+/* Floating Action Button (minimized state) */
+.linkedboost-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0077b5 0%, #00a0dc 100%);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0, 119, 181, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    z-index: 999999;
+}
+
+.linkedboost-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 24px rgba(0, 119, 181, 0.5);
+}
+
+/* Floating Panel */
+.linkedboost-floating-panel {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 280px;
+    background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    z-index: 999999;
+    overflow: hidden;
+}
+
+/* Panel Header */
+.linkedboost-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #0077b5 0%, #00a0dc 100%);
+    color: white;
+}
+
+.linkedboost-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.linkedboost-panel-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.linkedboost-icon-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.linkedboost-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Panel Content */
+.linkedboost-panel-content {
+    padding: 16px;
+}
+
+/* Auth Prompt */
+.linkedboost-auth-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 0;
+    text-align: center;
+}
+
+.linkedboost-auth-prompt p {
+    color: #a0a0a0;
+    font-size: 13px;
+    margin: 0;
+}
+
+/* Status Bar */
+.linkedboost-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    margin-bottom: 12px;
+}
+
+.linkedboost-status.synced {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.linkedboost-status.not-synced {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Actions */
+.linkedboost-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Buttons */
+.linkedboost-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    width: 100%;
+}
+
+.linkedboost-btn-primary {
+    background: linear-gradient(135deg, #0077b5 0%, #00a0dc 100%);
+    color: white;
+}
+
+.linkedboost-btn-primary:hover {
+    box-shadow: 0 4px 12px rgba(0, 119, 181, 0.4);
+    transform: translateY(-1px);
+}
+
+.linkedboost-btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.linkedboost-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.linkedboost-btn-outline {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.linkedboost-btn-outline:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.linkedboost-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Spin animation */
+@keyframes linkedboost-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.linkedboost-btn .animate-spin {
+    animation: linkedboost-spin 1s linear infinite;
+}

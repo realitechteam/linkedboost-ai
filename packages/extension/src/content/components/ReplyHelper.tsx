@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Sparkles, X } from 'lucide-react';
+import { canSuggestReply, recordReplySuggestion } from '../../lib/linkedinApi';
 
 interface ReplyHelperProps {
     messageInput: HTMLElement;
@@ -14,15 +15,32 @@ export function ReplyHelper({ messageInput }: ReplyHelperProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+    const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null);
+
+    const vietnameseFallback: Suggestion[] = [
+        { tone: 'professional', text: 'Cảm ơn bạn đã liên hệ. Tôi rất vui được trao đổi thêm. Bạn có thể cho tôi biết thời gian phù hợp để nói chuyện không?' },
+        { tone: 'friendly', text: 'Chào bạn! Cảm ơn tin nhắn nhé. Nghe hay đấy - mình muốn trao đổi thêm. Khi nào bạn rảnh?' },
+        { tone: 'concise', text: 'Cảm ơn bạn. Rất vui được trao đổi. Tuần này bạn rảnh không?' },
+    ];
 
     const handleClick = async () => {
         if (isOpen) {
             setIsOpen(false);
+            setRateLimitMessage(null);
+            return;
+        }
+
+        // Check rate limit before proceeding
+        const rateLimitStatus = await canSuggestReply();
+        if (!rateLimitStatus.canProceed) {
+            setIsOpen(true);
+            setRateLimitMessage(rateLimitStatus.message || 'Đã đạt giới hạn. Vui lòng đợi.');
             return;
         }
 
         setIsOpen(true);
         setIsLoading(true);
+        setRateLimitMessage(null);
 
         // Get conversation context
         const conversationEl = messageInput.closest('.msg-thread');
@@ -43,19 +61,14 @@ export function ReplyHelper({ messageInput }: ReplyHelperProps) {
                 throw new Error(response.error);
             }
 
-            setSuggestions(response.data?.suggestions || [
-                { tone: 'professional', text: 'Thank you for reaching out. I would be happy to discuss this further. Let me know your availability for a call.' },
-                { tone: 'friendly', text: 'Hey! Thanks for the message. Sounds interesting - would love to chat more about this. When works for you?' },
-                { tone: 'concise', text: 'Thanks for connecting. Happy to discuss. Free this week?' },
-            ]);
+            setSuggestions(response.data?.suggestions || vietnameseFallback);
+
+            // Record successful suggestion for rate limiting
+            await recordReplySuggestion();
         } catch (error) {
             console.error('Failed to get suggestions:', error);
-            // Fallback suggestions
-            setSuggestions([
-                { tone: 'professional', text: 'Thank you for reaching out. I would be happy to discuss this further. Let me know your availability for a call.' },
-                { tone: 'friendly', text: 'Hey! Thanks for the message. Sounds interesting - would love to chat more about this. When works for you?' },
-                { tone: 'concise', text: 'Thanks for connecting. Happy to discuss. Free this week?' },
-            ]);
+            // Fallback suggestions in Vietnamese
+            setSuggestions(vietnameseFallback);
         } finally {
             setIsLoading(false);
         }
@@ -116,7 +129,11 @@ export function ReplyHelper({ messageInput }: ReplyHelperProps) {
                         </button>
                     </div>
 
-                    {isLoading ? (
+                    {rateLimitMessage ? (
+                        <div className="linkedboost-loading">
+                            <span className="linkedboost-loading-text" style={{ color: '#f59e0b' }}>{rateLimitMessage}</span>
+                        </div>
+                    ) : isLoading ? (
                         <div className="linkedboost-loading">
                             <div className="linkedboost-spinner" />
                             <span className="linkedboost-loading-text">Generating suggestions...</span>

@@ -1,12 +1,12 @@
 // Prisma Schema for LinkedBoost AI
-// Database: PostgreSQL
+// Database: SQLite (local development)
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -18,7 +18,7 @@ model User {
   image         String?
   emailVerified DateTime?
   linkedinId    String?   @unique
-  role          UserRole  @default(USER)
+  role          String    @default("USER") // USER, ADMIN, SUPERADMIN
 
   // Relations
   accounts      Account[]
@@ -33,11 +33,7 @@ model User {
   updatedAt     DateTime  @updatedAt
 }
 
-enum UserRole {
-  USER
-  ADMIN
-  SUPERADMIN
-}
+// UserRole values: USER, ADMIN, SUPERADMIN (stored as String for SQLite)
 
 // NextAuth Account model for OAuth
 model Account {
@@ -46,12 +42,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -83,8 +79,9 @@ model Subscription {
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  plan      Plan     @default(FREE)
-  status    SubscriptionStatus @default(ACTIVE)
+  plan      String     @default("FREE") // FREE, PRO, PREMIUM
+  status    String     @default("ACTIVE") // ACTIVE, CANCELLED, PAST_DUE, TRIALING
+  profileLimit Int     @default(1) // FREE=1, PRO=5, PREMIUM=unlimited(-1)
   stripeCustomerId     String?  @unique
   stripeSubscriptionId String?  @unique
   stripePriceId        String?
@@ -96,40 +93,35 @@ model Subscription {
   updatedAt DateTime @updatedAt
 }
 
-enum Plan {
-  FREE
-  PRO
-  PREMIUM
-}
+// Plan values: FREE, PRO, PREMIUM
+// SubscriptionStatus values: ACTIVE, CANCELLED, PAST_DUE, TRIALING
 
-enum SubscriptionStatus {
-  ACTIVE
-  CANCELLED
-  PAST_DUE
-  TRIALING
-}
-
-// LinkedIn Profile data
+// LinkedIn Profile data - supports multiple profiles per user
 model LinkedInProfile {
   id         String   @id @default(cuid())
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  linkedInId String   // LinkedIn's unique user identifier (from URL or profile)
   profileUrl String
+  name       String?
   headline   String?
-  about      String?  @db.Text
-  experience Json?    // Array of experience objects
-  education  Json?    // Array of education objects
-  skills     String[]
+  about      String?
+  location   String?
+  connections String?
+  experience String?  // JSON string of experience array
+  education  String?  // JSON string of education array
+  skills     String?  // JSON string of skills array
 
   // Analysis results
   lastScore    Int?
-  lastAnalysis Json?
+  lastAnalysis String?  // JSON string of analysis
   lastSyncedAt DateTime? // When profile was last synced from extension
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([userId, linkedInId]) // One user can have one entry per LinkedIn profile
   @@index([userId])
 }
 
@@ -140,11 +132,11 @@ model PostDraft {
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   topic    String
-  content  String   @db.Text
+  content  String
   tone     String
   format   String
-  hashtags String[]
-  status   PostStatus @default(DRAFT)
+  hashtags String?    // JSON string of hashtags array
+  status   String     @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -152,11 +144,7 @@ model PostDraft {
   @@index([userId])
 }
 
-enum PostStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
+// PostStatus values: DRAFT, PUBLISHED, ARCHIVED
 
 // Job match analysis
 model JobMatch {
@@ -168,7 +156,7 @@ model JobMatch {
   jobTitle   String
   company    String
   matchScore Int
-  analysis   Json     // Detailed match breakdown
+  analysis   String   // JSON string of match breakdown
 
   createdAt DateTime @default(now())
 
@@ -181,20 +169,15 @@ model UsageRecord {
   userId   String
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  feature    Feature
+  feature    String // REPLY_SUGGEST, POST_GENERATE, PROFILE_ANALYZE, JOB_MATCH
   tokensUsed Int      @default(0)
   cost       Float    @default(0)
 
   // Daily/Monthly tracking
-  date       DateTime @default(now()) @db.Date
+  date       DateTime @default(now())
 
   @@unique([userId, feature, date])
   @@index([userId, date])
 }
 
-enum Feature {
-  REPLY_SUGGEST
-  POST_GENERATE
-  PROFILE_ANALYZE
-  JOB_MATCH
-}
+// Feature values: REPLY_SUGGEST, POST_GENERATE, PROFILE_ANALYZE, JOB_MATCH

@@ -1,15 +1,18 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useEffect } from 'react';
 import { Loader2, TrendingUp, ExternalLink } from 'lucide-react';
+import { API_BASE } from '../../lib/constants';
 export function ProfileBadge({ profileData }) {
     const [isLoading, setIsLoading] = useState(true);
     const [analysis, setAnalysis] = useState(null);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isMock, setIsMock] = useState(false);
     useEffect(() => {
         analyzeProfile();
-    }, [profileData]);
+    }, [profileData.name, profileData.headline]);
     const analyzeProfile = async () => {
         setIsLoading(true);
+        setIsMock(false);
         try {
             const response = await chrome.runtime.sendMessage({
                 action: 'analyzeProfile',
@@ -18,11 +21,18 @@ export function ProfileBadge({ profileData }) {
             if (response.error) {
                 throw new Error(response.error);
             }
-            setAnalysis(response.data || generateMockAnalysis());
+            if (response.data) {
+                setAnalysis(response.data);
+            }
+            else {
+                setIsMock(true);
+                setAnalysis(generateMockAnalysis());
+            }
         }
         catch (error) {
             console.error('Profile analysis failed:', error);
             // Use mock data for demo
+            setIsMock(true);
             setAnalysis(generateMockAnalysis());
         }
         finally {
@@ -64,7 +74,7 @@ export function ProfileBadge({ profileData }) {
     };
     const openDashboard = () => {
         chrome.tabs.create({
-            url: `http://localhost:3001/profile?url=${encodeURIComponent(window.location.href)}`
+            url: `${API_BASE}/profile?url=${encodeURIComponent(window.location.href)}`
         });
     };
     if (isLoading) {
@@ -77,7 +87,7 @@ export function ProfileBadge({ profileData }) {
             flexDirection: isExpanded ? 'column' : 'row',
             alignItems: isExpanded ? 'stretch' : 'center',
             width: isExpanded ? '320px' : 'auto',
-        }, children: [_jsxs("div", { style: { display: 'flex', alignItems: 'center', gap: '10px' }, children: [_jsx("div", { className: `linkedboost-score-circle ${getScoreColor(analysis.overallScore)}`, children: analysis.overallScore }), _jsxs("div", { className: "linkedboost-badge-content", children: [_jsx("span", { className: "linkedboost-badge-title", children: "Profile Score" }), _jsxs("span", { className: "linkedboost-badge-subtitle", children: [_jsx(TrendingUp, { size: 12, style: { display: 'inline', marginRight: '4px' } }), "Click for details"] })] })] }), isExpanded && (_jsxs("div", { style: { marginTop: '16px', borderTop: '1px solid #334155', paddingTop: '16px' }, children: [_jsx("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }, children: Object.entries(analysis.sections).map(([key, value]) => (_jsxs("div", { style: {
+        }, children: [_jsxs("div", { style: { display: 'flex', alignItems: 'center', gap: '10px' }, children: [_jsx("div", { className: `linkedboost-score-circle ${getScoreColor(analysis.overallScore)}`, children: analysis.overallScore }), _jsxs("div", { className: "linkedboost-badge-content", children: [_jsx("span", { className: "linkedboost-badge-title", children: "Profile Score" }), _jsxs("span", { className: "linkedboost-badge-subtitle", children: [_jsx(TrendingUp, { size: 12, style: { display: 'inline', marginRight: '4px' } }), "Click for details"] }), isMock && (_jsx("span", { style: { fontSize: '10px', color: '#f59e0b', display: 'block', marginTop: '2px' }, children: "(\u01AF\u1EDBc t\u00EDnh - k\u1EBFt n\u1ED1i server \u0111\u1EC3 xem k\u1EBFt qu\u1EA3 ch\u00EDnh x\u00E1c)" }))] })] }), isExpanded && (_jsxs("div", { style: { marginTop: '16px', borderTop: '1px solid #334155', paddingTop: '16px' }, children: [_jsx("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }, children: Object.entries(analysis.sections).map(([key, value]) => (_jsxs("div", { style: {
                                 padding: '8px 12px',
                                 background: '#0f172a',
                                 borderRadius: '8px',
